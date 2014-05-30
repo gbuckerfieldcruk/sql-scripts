@@ -15,9 +15,10 @@ select @day = right('0' + convert(varchar(2), (datepart(day, getdate()))), 2)
 
 select @time = replace(convert(varchar(20), getdate(), 108), ':', '')
 
--- Exclude system databases, snapshots and any database that is not online
+-- Exclude snapshots and any database that is not online
 select @name = min(name) from master.sys.databases 
-where database_id > 4 and state = 0 and source_database_id is null
+where (database_id > 4 and state = 0 and source_database_id is null)
+or (name in ('master', 'model', 'msdb'))
 
 
 while @name is not null
@@ -45,5 +46,7 @@ begin
 	exec (@sql)
 
 	-- Get the next database
-	select @name = min(name) from master.sys.databases where database_id > 4 and state = 0 and source_database_id is null and name > @name
+	select @name = min(name) from master.sys.databases 
+	where ((database_id > 4 and state = 0 and source_database_id is null)
+	or (name in ('master', 'model', 'msdb'))) and name > @name
 end
